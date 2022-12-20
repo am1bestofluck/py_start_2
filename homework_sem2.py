@@ -181,7 +181,7 @@ def lineup_floats(N: int, base: int = 1) -> List[float]:
 
         round_to - знаков до отсечки"""
         return (1 + 1/seed) ** seed
-    
+
     step_direction = 1 if (base < N) else -1
     # определяемся с пределом и направлением шага списка
     if base < N:
@@ -193,38 +193,77 @@ def lineup_floats(N: int, base: int = 1) -> List[float]:
     #! определяемся с пределом и направлением шага списка
     # идею с map подсмотрел на разборе.но это же вся суть- узнать новое.
     output = round(ndigits=2,
-                    number=sum(list(map(
-                    calc_output_item,range(base, N_mod, step_direction)))))
+                   number=sum(list(map(
+                       calc_output_item, range(base, N_mod, step_direction)))))
     return output
 
 
-def lineup_multiplied(N: int) -> int:
-    """Выводит суммы элементов списка от -N до N.
-    Индексы из внешнего файла. Файл в комплект не входит.
+def lineup_multiplied(N: int, frequency: int = 5) -> int:
+    """Выводит произведение элементов по индексам списка от -N до N.
+    Индексы из внешнего файла. Файл создаётся и удаляется подфункциями.
 
-    N- предел списка
+    Вызовет BlockingIOError в случае угрозы перезаписи.
+
+    N - предел списка
+
+    frequency - количество индексов для файла
     """
     """
     limits - обращаемся к отрицательным вводам
     list_numbers - будем суммировать элементы отсюда
     output - вывод
     filename - имя файла который мы создадим
-    frequency - количество значений которые Мы запишем в файл
+    frequency - количество индексов которые Мы запишем в файл
+    content - содержимое файла
+    fill_txt - подфункция, отвечает за заполнение файла
+    clean_up_txt - подфункция, считывает индексы и удаляет файл
     """
-    frequency = 5
-    limits = (-N,N+1)
-    list_numbers = [i for i in range(min(limits), max(limits),1)]
-    print(list_numbers)
-    for i in range( frequency):
-        
+
+    def fill_txt(filename: str, content: str) -> None:
+        """создаём и заполняем файл. BlockingIOError- тут.
+
+        filename - только имя файла, по директориям гулять _не надо_
+        content - содержимое файла
+        """
+
+        if Path(filename).exists():
+            raise BlockingIOError("ВАУ. Перезаписывать не будем.")
+        with open(filename,'w') as file_:
+            file_.write(content)
+        return None
+
+    def clean_up_txt(filename: str) -> List[int]:
+        """считываем и __удаляем__ файл
+
+        filename - адрес.
+        """
+        """extracted - содержимое файла"""
+        output = []
+        with open(filename,'r') as file_:
+            extracted = file_.readlines()
+        for line in extracted:
+            try:
+                output.append(int(line))
+            except:
+                print(f'not int-able line: __{line}__')
+        os.unlink(filename)
+        return output
+
+    limits = (-N, N+1)
+    list_numbers = [i for i in range(min(limits), max(limits), 1)]
+    content = ""
+    for i in range(frequency):
+        content += (f"{random.choice(range(len(list_numbers)))}\n")
     filename = f"AM_{datetime.datetime.now():%Y-%m-%d_%H_%M_%f}.txt"
-    assert not Path(filename).exists()
-    for i
-    with open(filename,'a') as file:
-        for i in range(frequency):
-            file.write(f"{random.choice(range(len(list_numbers)))}")         
-    output = 0
-    os.unlink(filename)
+    fill_txt(filename=filename, content=content)
+    indexes = clean_up_txt(filename=filename)
+    output = 1
+    print(f'список: {str(list_numbers)}')
+    print(f'индексы: {str(indexes)}')
+    for ind in indexes:
+        print (f'{str(output)} * {str(list_numbers[ind])} = ',end='')
+        output *= list_numbers[ind]
+        print(f'{output}')
     return output
 
 
@@ -249,18 +288,19 @@ def main():
         print(lineup_factorials.__doc__)
         print(lineup_factorials(validate_input(short_note="Input N?")))
         Break()
-    
+
     def t3() -> None:
         print(lineup_floats.__doc__)
         print(lineup_floats(
             validate_input(accepts_zero=False,
-                        short_note="N? int")
+                           short_note="Input N?")
         ))
 
     def t4() -> None:
         print(lineup_multiplied.__doc__)
         print(lineup_multiplied(validate_input(short_note='Input N?')))
-    
+        Break()
+
     t4()
 
 
