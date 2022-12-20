@@ -1,19 +1,26 @@
 """
 GB Программист, "Знакомство с языком Python( семинары)", #2.  
 
-lineup_factorials - выводит последовательный список факториалов.  
+# t1()
+    float_sum_signs - выводит сумму цифр рационального числа. 
 
-lineup_floats - выводит отредактированный список.  
+# t2()
+    list_factorials - выводит последовательный список факториалов.   
 
-lineup_multiplied - выводит произведение элементов списка.  
+# t3()
+    list_floats - выводит отредактированный список.  
 
-shake_lineup - перемешивает список.  
+# t4()
+    list_multiplied - выводит произведение элементов списка.  
 
-float_sum_signs - выводит сумму цифр рационального числа.  
+# t5()
+    shake_list - перемешивает список.   
 
+# сопроводительные:
 factorial_recursion - считаем факториал.  
-
 validate_input_float - принимаем от пользователя вещественное число
+test_arrays_equality - маленький тест на равенство списков( для t5)
+
 """
 
 
@@ -27,6 +34,7 @@ import datetime
 import os
 import random
 import sys
+from copy import deepcopy
 from pathlib import Path
 from typing import List, Tuple
 
@@ -132,7 +140,7 @@ def factorial_recursion(base: int) -> int:
         return i*factorial_recursion(i-1)
 
 
-def lineup_factorials(N: int = 0, base: int = 1) -> List[int]:
+def list_factorials(N: int = 0, base: int = 1) -> List[int]:
     """создаёт список  факториалов от  base до N включительно
 
     N- предел последовательности
@@ -159,7 +167,7 @@ def lineup_factorials(N: int = 0, base: int = 1) -> List[int]:
     return output
 
 
-def lineup_floats(N: int, base: int = 1) -> List[float]:
+def list_floats(N: int, base: int = 1) -> float:
     """выводит сумму списка вещественных чисел образованных по формуле 
     o = (i + 1/i) ** i
 
@@ -172,7 +180,10 @@ def lineup_floats(N: int, base: int = 1) -> List[float]:
     N_mod - прыгаем вокруг range чтобы предельное значение попало в вывод
     output - выводной список
     calc_output_item- выносим расчётную часть
+    round_to - предел округления
     """
+
+    round_to = 2
 
     def calc_output_item(seed: int) -> float:
         """считаем вывод в соответсвии с ТЗ.
@@ -191,14 +202,14 @@ def lineup_floats(N: int, base: int = 1) -> List[float]:
         step_direction = -1
         N_mod = N - 1
     #! определяемся с пределом и направлением шага списка
-    # идею с map подсмотрел на разборе.но это же вся суть- узнать новое.
-    output = round(ndigits=2,
-                   number=sum(list(map(
-                       calc_output_item, range(base, N_mod, step_direction)))))
+    output = [round(calc_output_item(i), round_to)
+              for i in range(base, N_mod, step_direction)]
+    print(output) # чтобы было с чем сравнивать
+    output = round(sum(output),round_to)
     return output
 
 
-def lineup_multiplied(N: int, frequency: int = 5) -> int:
+def list_multiplied(N: int, frequency: int = 5) -> int:
     """Выводит произведение элементов по индексам списка от -N до N.
     Индексы из внешнего файла. Файл создаётся и удаляется подфункциями.
 
@@ -228,7 +239,7 @@ def lineup_multiplied(N: int, frequency: int = 5) -> int:
 
         if Path(filename).exists():
             raise BlockingIOError("ВАУ. Перезаписывать не будем.")
-        with open(filename,'w') as file_:
+        with open(filename, 'w') as file_:
             file_.write(content)
         return None
 
@@ -239,7 +250,7 @@ def lineup_multiplied(N: int, frequency: int = 5) -> int:
         """
         """extracted - содержимое файла"""
         output = []
-        with open(filename,'r') as file_:
+        with open(filename, 'r') as file_:
             extracted = file_.readlines()
         for line in extracted:
             try:
@@ -261,47 +272,125 @@ def lineup_multiplied(N: int, frequency: int = 5) -> int:
     print(f'список: {str(list_numbers)}')
     print(f'индексы: {str(indexes)}')
     for ind in indexes:
-        print (f'{str(output)} * {str(list_numbers[ind])} = ',end='')
+        print(f'{str(output)} * {str(list_numbers[ind])} = ', end='')
         output *= list_numbers[ind]
         print(f'{output}')
     return output
 
 
-def shake_lineup(list_i: List[int]) -> list:
-    output = []
+def shake_list(list_i: List[int]) -> list:
+    """Перемешать список. random.shuffle нельзя.
+    Один раз в конце даёт index error потому что random.choice не хочет
+    выбирать из нуля элементов.
+    """
+    """
+    # https://space-base.ru/library/algoritm/algoritm-peremeshivaniya-massiva-edit
+    берём первый попавшийся из понравившихся, алгоритм перемешивания:
+    * выбираем случайный элемент массива;
+    * меняем его местами с последним элементом;
+    * снова выбираем случайный элемент массива, не затрагивая последний;
+    * меняем с предпоследним;
+
+    output - выводной массив. Создаём копию потому что "=" присваивание 
+    создаёт ссылку на указатель в памяти, так Мы сортируем исходник
+    """
+
+    output = deepcopy(list_i)
+    for backtrack in range(len(output)-1, -1, -1):
+        try:
+            tmp = random.choice(range(len(output[:backtrack])))
+            output[backtrack], output[tmp] = output[tmp], output[backtrack]
+        except IndexError:
+            pass  # пришли в конец списка
     return output
 
 
 def test_arrays_equality(
-        seed_list: List[int], list_shuffled: List[int]
+    seed_list: List[int], list_shuffled: List[int]
 ) -> bool:
+    """печатаем для очевидности и !сравниваем списки"""
+    print('seed: ', end='')
+    if len(seed_list) < 20:
+        print(seed_list)
+    else: 
+        print( seed_list[:10],'..',seed_list[-10:],sep='')
+    print('shuffled: ', end='')
+    if len(list_shuffled) < 20:
+        print(list_shuffled)
+    else: 
+        print( list_shuffled[:10],'..',list_shuffled[-10:],sep='')
     return sorted(seed_list) == sorted(list_shuffled)
 
 
 def main():
-    def t1() -> None:
+    """
+    Запускает все задания, если через консоль не указано иное.  
+    аргументы: t1 t2 t3 t4 t5.
+    """
+    """
+    executed- список выполненных команд, вводим чтобы не запускать функции
+    по два раза по два раза
+    """
+    def t1() -> None:  # считаем сумму знаков в числе
         print(float_summarize_signs.__doc__)
         print(float_summarize_signs(validate_input_float(short_note="float!")))
         Break()
 
-    def t2() -> None:
-        print(lineup_factorials.__doc__)
-        print(lineup_factorials(validate_input(short_note="Input N?")))
+    def t2() -> None:  # итерируемся по списку( факториалы)
+        print(list_factorials.__doc__)
+        print(list_factorials(validate_input(short_note="Input N?")))
         Break()
 
-    def t3() -> None:
-        print(lineup_floats.__doc__)
-        print(lineup_floats(
+    def t3() -> None:  # ещё итерируемся по списку( прячем ряд чисел в мусоре)
+        print(list_floats.__doc__)
+        print(list_floats(
             validate_input(accepts_zero=False,
                            short_note="Input N?")
         ))
-
-    def t4() -> None:
-        print(lineup_multiplied.__doc__)
-        print(lineup_multiplied(validate_input(short_note='Input N?')))
         Break()
 
-    t4()
+    def t4() -> None:  # пишем - читаем файл
+        print(list_multiplied.__doc__)
+        print(list_multiplied(validate_input(short_note='Input N?')))
+        Break()
+
+    def t5() -> None:  # перемешиваем список
+        print(shake_list.__doc__)
+        random_list = random.choices(range(1, 999), k=50)
+        list_shuffled = shake_list(random_list)
+        are_same = test_arrays_equality(
+            seed_list=random_list, list_shuffled=list_shuffled)
+        print(f"списки {'совпали' if are_same else 'не совпали...'}")
+        Break()
+
+    if len(sys.argv) > 1:
+        executed = []
+        for arg in sys.argv[1:]:
+            if arg in executed:
+                continue
+            else:
+                executed.append(arg)
+                match arg:
+                    case 't1':
+                        t1()
+                    case 't2':
+                        t2()
+                    case 't3':
+                        t3()
+                    case 't4':
+                        t4()
+                    case 't5':
+                        t5()
+                    case _:
+                        print(__doc__)
+                        sys.exit()
+
+    else:
+        t1()
+        t2()
+        t3()
+        t4()
+        t5()
 
 
 if __name__ == "__main__":
